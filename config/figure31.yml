@@ -1,0 +1,51 @@
+figure:
+  basename: Figure_3_1_validation_summary_draft
+  title: Analytical validation of signal-derived recording-quality indicators
+  dpi: 300
+  width_in: 13.0
+  height_in: 9.2
+
+panel_a:
+  title: Representative controlled responses
+  qadd:
+    x_label: Added pause-region level (dBFS)
+    y_label: Measured pause level (dBFS)
+  qgain:
+    x_label: Modulation dose (dB)
+    y_label: Within-segment IQR (dB)
+  qrev:
+    x_label: Simulated decay time (s)
+    y_label: Tail persistence (s)
+  qchan:
+    x_label: Upper-band reduction (Hz)
+    y_label: Rolloff deficit (Hz)
+  qdist:
+    x_label: True altered-sample fraction
+    y_label: Estimated sample fraction
+
+panel_b:
+  title: Repeated-recording persistence of principal indicators
+  features:
+    - family: QADD
+      feature: qadd_pause_ac_level_dbfs_median
+      label: QADD pause level
+    - family: QGAIN
+      feature: qgain_within_segment_iqr_db
+      label: QGAIN within-segment variability
+    - family: QREV
+      feature: qrev_tail_excess_100ms_db
+      label: QREV tail excess
+    - family: QCHAN
+      feature: qchan_ltas_distance_db
+      label: QCHAN LTAS distance
+    - family: QCHAN
+      feature: qchan_rolloff95_deficit_hz
+      label: QCHAN rolloff deficit
+
+panel_c:
+  title: Final analytical roles
+  categories:
+    - principal_or_contextual
+    - supporting_or_comparator
+    - exploratory_monitoring_or_audit
+    - dropped
