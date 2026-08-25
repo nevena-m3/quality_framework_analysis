@@ -2,18 +2,12 @@
 .venv/
 __pycache__/
 *.py[cod]
+*.egg-info/
 .ipynb_checkpoints/
 .pytest_cache/
 .ruff_cache/
 
-# Inputs are linked from the governed feature pipeline and are not duplicated here.
-data/raw/family_freezes/
-data/raw/archives/
-
-# Derived registries and analysis results are reproducible and may contain local paths
-# or participant-level information. Keep only their directory documentation in Git.
-data/derived/registries/*
-!data/derived/registries/.gitkeep
+# Generated results may contain local paths or participant-level information.
 outputs/*
 !outputs/README.md
 !outputs/.gitkeep

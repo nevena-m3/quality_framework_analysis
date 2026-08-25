@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$Notebook = "notebooks\01_validation_synthesis.ipynb",
+    [string]$Notebook = "notebooks\01_run_final_analysis.ipynb",
     [switch]$OpenProjectRoot
 )
 
@@ -10,7 +10,7 @@ $AnalysisRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $PythonExe = Join-Path $AnalysisRoot ".venv\Scripts\python.exe"
 
 if (-not (Test-Path -LiteralPath $PythonExe -PathType Leaf)) {
-    throw "The analysis environment was not found at: $PythonExe. Run .\scripts\setup\setup_project.ps1 first."
+    throw "The analysis environment was not found at: $PythonExe. Create it and install -e '.[notebooks,dev]' first."
 }
 
 if ($OpenProjectRoot) {

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "quality-framework-analysis"
-version = "1.0.0"
+version = "2.0.0"
 description = "Reproducible analyses of reviewed remote-speech recording-quality features"
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
@@ -13,16 +13,14 @@ dependencies = [
   "pandas>=2.2,<3",
   "scipy>=1.13,<2",
   "matplotlib>=3.8,<4",
-  "statsmodels>=0.14,<1",
-  "scikit-learn>=1.5,<2",
-  "pyarrow>=16,<23",
-  "openpyxl>=3.1,<4",
-  "PyYAML>=6,<7",
 ]
 
 [project.optional-dependencies]
 notebooks = ["jupyterlab>=4.2,<5", "ipykernel>=6.29,<7", "nbformat>=5.10,<6"]
 dev = ["pytest>=8,<9", "ruff>=0.5,<1"]
+
+[project.scripts]
+rq-final-analysis = "rq_analysis.final_pipeline:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
