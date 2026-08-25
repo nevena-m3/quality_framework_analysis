@@ -4,6 +4,6 @@ This directory is intentionally excluded from Git because outputs are reproducib
 can be large, contain machine-specific provenance paths, and may include
 participant-level information.
 
-Run `python scripts/run_final_analysis.py` or the single canonical notebook. The
-pipeline creates auditable tables, PNG/SVG figures, a failure ledger, and an
-input-hashed run manifest. The exact inventory is documented in the main README.
+Run notebooks in numeric order. Each notebook writes to its own named subtree and
+creates tables, models, figures, logs, and manifests as applicable. See
+`docs/ANALYSIS_GUIDE.md` for the exact mapping.

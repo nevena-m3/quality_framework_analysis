@@ -1,0 +1,122 @@
+families:
+  QADD:
+    folder: additive_interference
+    display_name: Additive interference
+    expected_version_prefix: qadd-v
+    feature_decision_patterns:
+      - validation/*g10*feature*decision*.csv
+      - provenance/*FINAL_FEATURE_DECISIONS*.csv
+    gate_patterns:
+      - validation/*gate_summary_final*.csv
+      - tables/*gate_summary*.csv
+    checklist_patterns:
+      - provenance/*Validation_Checklist*.csv
+    dashboard_patterns:
+      - validation/*ten_domain_dashboard*.csv
+      - provenance/*Ten_Domain_Dashboard*.csv
+    construct_source_patterns:
+      - figures/A_construct_response.source.csv
+    persistence_source_patterns:
+      - tables/*repeated_recording_persistence*.csv
+    representative_feature: qadd_pause_ac_level_dbfs_median
+    representative_label: Pause level
+
+  QGAIN:
+    folder: gain_dynamics
+    display_name: Recorded level and dynamics
+    expected_version_prefix: qgain-v
+    feature_decision_patterns:
+      - validation/qgain*_g10_feature_decisions.csv
+      - provenance/*FEATURE_DECISIONS*.csv
+    gate_patterns:
+      - validation/qgain*_gate_summary.csv
+    checklist_patterns: []
+    dashboard_patterns: []
+    construct_source_patterns:
+      - validation/source_qgain_v401/*g4_dose_response.csv
+    persistence_source_patterns:
+      - validation/*repeated_recording_persistence.csv
+    representative_feature: qgain_within_segment_iqr_db
+    representative_label: Within-segment variability
+
+  QREV:
+    folder: reverberation
+    display_name: Residual tail and modulation smearing
+    expected_version_prefix: qrev-v
+    feature_decision_patterns:
+      - validation/*g10*feature*decision*.csv
+      - provenance/*FINAL_FEATURE_DECISIONS*.csv
+    gate_patterns:
+      - validation/*gate_summary_final*.csv
+      - tables/*gate_summary*.csv
+    checklist_patterns:
+      - provenance/*Validation_Checklist*.csv
+    dashboard_patterns:
+      - validation/*ten_domain_dashboard*.csv
+      - provenance/*Ten_Domain_Dashboard*.csv
+    construct_source_patterns:
+      - figures/A_construct_response.source.csv
+    persistence_source_patterns:
+      - validation/*repeated_recording_persistence.csv
+    representative_feature: qrev_tail_excess_100ms_db
+    representative_label: Early residual-tail excess
+
+  QCHAN:
+    folder: channel_device
+    display_name: Channel-related spectral variation
+    expected_version_prefix: qchan-v
+    feature_decision_patterns:
+      - validation/*g10*feature*decision*.csv
+      - provenance/*FINAL_FEATURE_DECISIONS*.csv
+    gate_patterns:
+      - validation/*gate_summary_final*.csv
+      - provenance/*Gate_Summary_FINAL*.csv
+    checklist_patterns:
+      - provenance/*Validation_Checklist*.csv
+    dashboard_patterns:
+      - validation/*ten_domain_dashboard*.csv
+      - provenance/*Ten_Domain_Dashboard*.csv
+    construct_source_patterns:
+      - figures/A_construct_response.source.csv
+    persistence_source_patterns:
+      - validation/*repeated_recording_persistence_with_ci.csv
+      - validation/*repeated_recording_persistence.csv
+    representative_feature: qchan_ltas_distance_db
+    representative_label: LTAS distance
+
+  QDIST:
+    folder: nonlinear_distortion
+    display_name: Hard-clipping morphology
+    expected_version_prefix: qdist-v
+    feature_decision_patterns:
+      - tables/*final_feature_decisions.csv
+      - finalization/tables/*final_feature_decisions.csv
+    gate_patterns: []
+    checklist_patterns:
+      - validation/*MEASUREMENT_FREEZE_READY.csv
+      - computational_verification_v1/validation/*COMPUTATIONAL_VERIFICATION.csv
+    dashboard_patterns: []
+    construct_source_patterns:
+      - computational_verification_v1/figures/*D1_matched-burden-response.source.csv
+    persistence_source_patterns:
+      - computational_verification_v1/figures/*H2_repeated-recordings.source.csv
+    representative_feature: qdist_hard_clipped_sample_fraction
+    representative_label: Hard-clipped sample fraction
+
+  QTEMP:
+    folder: temporal_discontinuity
+    display_name: Temporal discontinuity
+    expected_version_prefix: qtemp-v
+    feature_decision_patterns:
+      - validation/*feature_decisions.csv
+    gate_patterns:
+      - validation/*gate_summary.csv
+    checklist_patterns:
+      - validation/*validation_checklist.csv
+    dashboard_patterns: []
+    construct_source_patterns:
+      - figures/panel-A_construct-response/*.csv
+    persistence_source_patterns:
+      - figures/panel-H_reliability-redundancy/*.csv
+    representative_feature: null
+    representative_label: No primary feature retained
