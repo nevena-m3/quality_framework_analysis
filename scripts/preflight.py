@@ -6,14 +6,16 @@ import os
 from pathlib import Path
 
 
-FAMILIES = (
-    "additive_interference",
-    "gain_dynamics",
-    "reverberation",
-    "channel_device",
-    "nonlinear_distortion",
-    "temporal_discontinuity",
-)
+FAMILIES = {
+    "QGAIN": Path("families/01_QGAIN"),
+    "QADD": Path("families/02_QADD"),
+    "QREV": Path("families/03_QREV"),
+    "QCHAN": Path("families/04_QCHAN"),
+    "QDIST": Path("families/05_QDIST"),
+    "QTEMP (experimental, no retained features)": Path(
+        "experimental/QTEMP_LEGACY_NO_RETAINED"
+    ),
+}
 
 
 def analysis_root() -> Path:
@@ -21,7 +23,7 @@ def analysis_root() -> Path:
 
 
 def default_pipeline_root(root: Path) -> Path:
-    return root.parents[1] / "paper_1_cleanup"
+    return root.parent / "Paper_1_Final_Cleanup"
 
 
 def validate_notebook(path: Path) -> dict[str, object]:
@@ -51,19 +53,19 @@ def run_preflight(root: Path) -> dict[str, object]:
     data_freeze = Path(
         os.environ.get(
             "PAPER1_DATA_FREEZE_DIR",
-            pipeline / "MAIN outputs" / "00_DATA_FREEZE" / "v1",
+            pipeline / "outputs" / "data",
         )
     ).resolve()
     family_freeze = Path(
         os.environ.get(
             "PAPER1_FAMILY_FREEZE_DIR",
-            pipeline / "MAIN outputs" / "02_FEATURE_REVIEWED" / "06_family_freezes",
+            pipeline / "outputs" / "features",
         )
     ).resolve()
     human_qc = Path(
         os.environ.get(
             "PAPER1_HUMAN_QC_ROOT",
-            root.parents[2] / "Data_13072026" / "Bamboo_passage_HumanQC",
+            root.parents[1] / "Data_13072026" / "Bamboo_passage_HumanQC",
         )
     ).resolve()
 
@@ -74,7 +76,10 @@ def run_preflight(root: Path) -> dict[str, object]:
         "human_qc": human_qc,
     }
     missing = {name: str(path) for name, path in required.items() if not path.exists()}
-    family_missing = [name for name in FAMILIES if not (family_freeze / name).is_dir()]
+    family_missing = [
+        name for name, relative in FAMILIES.items()
+        if not (family_freeze / relative).is_dir()
+    ]
     notebooks = [validate_notebook(path) for path in sorted((root / "notebooks").glob("*.ipynb"))]
     if len(notebooks) != 7:
         raise RuntimeError(f"Expected 7 canonical notebooks; found {len(notebooks)}")
