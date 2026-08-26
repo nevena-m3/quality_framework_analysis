@@ -12,6 +12,55 @@ import yaml
 from .paths import ProjectPaths
 
 
+PUBLICATION_EXPECTED_CANDIDATE_COUNTS = {
+    "QADD": 5,
+    "QGAIN": 4,
+    "QREV": 4,
+    "QCHAN": 4,
+    "QDIST": 3,
+    "QTEMP": 4,
+}
+
+
+def publication_candidate_registry(feature_registry: pd.DataFrame) -> pd.DataFrame:
+    '''Return exactly the 24 candidate measures reported in the manuscript.
+
+    Governance-only companion/status rows and explicitly dropped development
+    candidates remain in the full registry for provenance, but they are not
+    counted as manuscript candidate measures.
+    '''
+    required = {"family", "role_group", "is_companion_status"}
+    missing = required.difference(feature_registry.columns)
+    if missing:
+        raise KeyError(f"Feature registry is missing required columns: {sorted(missing)}")
+
+    companions = (
+        feature_registry["is_companion_status"]
+        .astype(str)
+        .str.strip()
+        .str.lower()
+        .isin({"true", "1", "yes"})
+    )
+    dropped = (
+        feature_registry["role_group"]
+        .astype(str)
+        .str.strip()
+        .str.lower()
+        .eq("dropped")
+    )
+    frame = feature_registry.loc[~companions & ~dropped].copy()
+
+    observed = frame.groupby("family", dropna=False).size().to_dict()
+    if observed != PUBLICATION_EXPECTED_CANDIDATE_COUNTS:
+        raise RuntimeError(
+            "Publication candidate census mismatch. "
+            f"Expected {PUBLICATION_EXPECTED_CANDIDATE_COUNTS}; observed {observed}."
+        )
+    if len(frame) != 24:
+        raise RuntimeError(f"Expected 24 publication candidates; observed {len(frame)}.")
+    return frame
+
+
 def load_yaml(path: str | Path) -> dict[str, Any]:
     with Path(path).open("r", encoding="utf-8") as handle:
         return yaml.safe_load(handle)

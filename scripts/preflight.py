@@ -17,6 +17,15 @@ FAMILIES = {
     ),
 }
 
+VALIDATION_FAMILIES = {
+    "QADD": Path("additive_interference"),
+    "QGAIN": Path("gain_dynamics"),
+    "QREV": Path("reverberation"),
+    "QCHAN": Path("channel_device"),
+    "QDIST": Path("nonlinear_distortion"),
+    "QTEMP": Path("temporal_discontinuity"),
+}
+
 
 def analysis_root() -> Path:
     return Path(__file__).resolve().parents[1]
@@ -68,17 +77,28 @@ def run_preflight(root: Path) -> dict[str, object]:
             root.parents[1] / "Data_13072026" / "Bamboo_passage_HumanQC",
         )
     ).resolve()
+    validation_freeze = Path(
+        os.environ.get(
+            "PAPER1_VALIDATION_FREEZE_DIR",
+            root / "data" / "raw" / "family_freezes",
+        )
+    ).resolve()
 
     required = {
         "pipeline_root": pipeline,
         "data_freeze": data_freeze,
         "family_freeze": family_freeze,
+        "validation_freeze": validation_freeze,
         "human_qc": human_qc,
     }
     missing = {name: str(path) for name, path in required.items() if not path.exists()}
     family_missing = [
         name for name, relative in FAMILIES.items()
         if not (family_freeze / relative).is_dir()
+    ]
+    validation_family_missing = [
+        name for name, relative in VALIDATION_FAMILIES.items()
+        if not (validation_freeze / relative).is_dir()
     ]
     notebooks = [validate_notebook(path) for path in sorted((root / "notebooks").glob("*.ipynb"))]
     if len(notebooks) != 7:
@@ -88,8 +108,13 @@ def run_preflight(root: Path) -> dict[str, object]:
         "paths": {name: str(path) for name, path in required.items()},
         "missing_paths": missing,
         "missing_family_folders": family_missing,
+        "missing_validation_family_folders": validation_family_missing,
         "notebooks": notebooks,
-        "status": "PASS" if not missing and not family_missing else "FAIL",
+        "status": (
+            "PASS"
+            if not missing and not family_missing and not validation_family_missing
+            else "FAIL"
+        ),
     }
     return result
 
@@ -109,7 +134,12 @@ def main() -> int:
         if result["missing_paths"]:
             print("  missing paths:", result["missing_paths"])
         if result["missing_family_folders"]:
-            print("  missing families:", result["missing_family_folders"])
+            print("  missing compact-analysis families:", result["missing_family_folders"])
+        if result["missing_validation_family_folders"]:
+            print(
+                "  missing validation-evidence families:",
+                result["missing_validation_family_folders"],
+            )
     return 0 if result["status"] == "PASS" else 1
 
 

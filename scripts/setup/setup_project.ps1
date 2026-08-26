@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
     [string]$CleanupRoot = "",
+    [string]$ValidationFreezeRoot = "",
     [switch]$SkipEnvironment
 )
 
@@ -11,10 +12,30 @@ if (-not $CleanupRoot) {
 }
 $CleanupRoot = (Resolve-Path -LiteralPath $CleanupRoot).Path
 
+if (-not $ValidationFreezeRoot) {
+    if ($env:PAPER1_VALIDATION_FREEZE_DIR) {
+        $ValidationFreezeRoot = $env:PAPER1_VALIDATION_FREEZE_DIR
+    }
+    else {
+        $LocalValidationFreeze = Join-Path $AnalysisRoot "data\raw\family_freezes"
+        if (Test-Path -LiteralPath $LocalValidationFreeze) {
+            $ValidationFreezeRoot = $LocalValidationFreeze
+        }
+        else {
+            throw (
+                "Notebook 01 requires the governed full family-validation freeze. " +
+                "Pass -ValidationFreezeRoot <path> or set PAPER1_VALIDATION_FREEZE_DIR."
+            )
+        }
+    }
+}
+$ValidationFreezeRoot = (Resolve-Path -LiteralPath $ValidationFreezeRoot).Path
+
 $env:PAPER1_ANALYSIS_ROOT = $AnalysisRoot
 $env:PAPER1_PIPELINE_ROOT = $CleanupRoot
 $env:PAPER1_DATA_FREEZE_DIR = Join-Path $CleanupRoot "outputs\data"
 $env:PAPER1_FAMILY_FREEZE_DIR = Join-Path $CleanupRoot "outputs\features"
+$env:PAPER1_VALIDATION_FREEZE_DIR = $ValidationFreezeRoot
 $NevenaRoot = Split-Path (Split-Path $CleanupRoot -Parent) -Parent
 $env:PAPER1_HUMAN_QC_ROOT = Join-Path $NevenaRoot "Data_13072026\Bamboo_passage_HumanQC"
 
@@ -26,7 +47,14 @@ $Required = @(
     (Join-Path $env:PAPER1_FAMILY_FREEZE_DIR "families\03_QREV"),
     (Join-Path $env:PAPER1_FAMILY_FREEZE_DIR "families\04_QCHAN"),
     (Join-Path $env:PAPER1_FAMILY_FREEZE_DIR "families\05_QDIST"),
-    (Join-Path $env:PAPER1_FAMILY_FREEZE_DIR "experimental\QTEMP_LEGACY_NO_RETAINED")
+    (Join-Path $env:PAPER1_FAMILY_FREEZE_DIR "experimental\QTEMP_LEGACY_NO_RETAINED"),
+    $env:PAPER1_VALIDATION_FREEZE_DIR,
+    (Join-Path $env:PAPER1_VALIDATION_FREEZE_DIR "additive_interference"),
+    (Join-Path $env:PAPER1_VALIDATION_FREEZE_DIR "gain_dynamics"),
+    (Join-Path $env:PAPER1_VALIDATION_FREEZE_DIR "reverberation"),
+    (Join-Path $env:PAPER1_VALIDATION_FREEZE_DIR "channel_device"),
+    (Join-Path $env:PAPER1_VALIDATION_FREEZE_DIR "nonlinear_distortion"),
+    (Join-Path $env:PAPER1_VALIDATION_FREEZE_DIR "temporal_discontinuity")
 )
 foreach ($Path in $Required) {
     if (-not (Test-Path -LiteralPath $Path)) {

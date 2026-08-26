@@ -12,6 +12,8 @@ import numpy as np
 import pandas as pd
 from matplotlib.lines import Line2D
 
+from rq_analysis.registry import publication_candidate_registry
+
 FAMILY_ORDER = ["QADD", "QGAIN", "QREV", "QCHAN", "QDIST", "QTEMP"]
 ROLE_ORDER = [
     "principal_or_contextual",
@@ -169,8 +171,7 @@ def prepare_persistence_data(registry: pd.DataFrame) -> pd.DataFrame:
 
 
 def prepare_role_counts(feature_registry: pd.DataFrame) -> pd.DataFrame:
-    companions = feature_registry["is_companion_status"].astype(str).str.lower().isin({"true", "1", "yes"})
-    frame = feature_registry.loc[~companions].copy()
+    frame = publication_candidate_registry(feature_registry)
     table = (
         frame.groupby(["family", "role_group"])
         .size()
