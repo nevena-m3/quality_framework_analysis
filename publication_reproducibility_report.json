@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0.0",
+  "branch": "release/paper1-publication-freeze",
+  "audited_software_baseline": "dcfd4e1ec75aff7c04f44a301f4e7f3767501fb2",
+  "release_tag": "paper1-analysis-publication-v1.0.0",
+  "python": "3.12.10",
+  "fresh_retained_family_inputs": true,
+  "recording_count": 519,
+  "participant_count": 224,
+  "canonical_notebooks_completed": 7,
+  "analysis_tests": {"passed": 11, "status": "PASS"},
+  "publication_regression": {"passed": 22, "total": 22, "status": "PASS"},
+  "icc_bootstraps": 2000,
+  "one_recording_per_participant_resamples": 1000,
+  "governed_inputs_reused": ["HumanQC annotations", "family validation evidence", "QTEMP exploratory table"],
+  "participant_identifiers_in_report": false,
+  "historical_evidence_overwritten": false
+}
