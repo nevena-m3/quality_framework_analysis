@@ -108,6 +108,7 @@ Then run notebooks from top to bottom in numeric order:
 | 5 | `05_human_reference_reliability.ipynb` | Four-rater agreement, prevalence, temporal overlap, and harmonized human reference. | `outputs/goal3_human_correspondence/stage1b_human_reference_reliability/` |
 | 6 | `06_family_human_correspondence.ipynb` | Family-matched signal–human correspondence with participant-aware support gates. | `outputs/goal3_human_correspondence/stage2_construct_matched_correspondence/` |
 | 7 | `07_item_mapping_atlas.ipynb` | Exploratory item-feature mapping atlas and rater-stratified diagnostics. | `outputs/goal3_human_correspondence/stage3_item_mapping_atlas/` |
+| 8 | `08_revision_analyses.ipynb` | Revision analyses for the JBHI submission: normal-bulbar cohort check, availability by severity, separability-class summaries, family-contrast sensitivities. Requires final outputs of 02 and 03. See [docs/REVISION_ANALYSES.md](docs/REVISION_ANALYSES.md). | `outputs/revision_analyses/` |
 
 The long-running notebooks default to their frozen final settings (up to 2,000
 bootstrap replicates and 10,000 permutations). For development only, set each
