@@ -74,3 +74,47 @@ All outputs are aggregate tables (no participant-level rows). The file
   q-values. Class assignments are listed in the notebook and in `R0_feature_roles_and_classes.csv`.
 * **R4** reproduces Notebook 03's observed contrast exactly (the notebook stops if it does not),
   then reruns the label permutation for each variant.
+
+## Notebook 09: biomarker impact
+
+`notebooks/09_biomarker_impact.ipynb` answers "does quality matter for real speech biomarkers?" with
+Paper 2's six frozen primary Bamboo features (articulation rate, percent pause time, mean pause and phrase
+duration, phrase-duration CV, F0 IQR).
+
+| Section | Question | Main output |
+|---|---|---|
+| B1 | Under controlled degradation of the same recordings, does the matching quality measure respond while the others stay put, and how far do the biomarkers move relative to the real ALS–control difference? | `B1b_specificity_summary.csv`, `B1b_clipping_detection_by_transform.csv`, `B1c_biomarker_shift_vs_gap.csv` |
+| B2 | Do the real-cohort ALS–control and bulbar associations change when recordings flagged by class A/B measures (any clipping, top-decile hum, top-decile pause-region level) are excluded, or when pause-region level is adjusted for? | `B2a_flag_rates_by_cohort.csv`, `B2c_change_after_flag_handling.csv` |
+
+B1 only reads Paper 2's existing Goal 3 Stage E tables; nothing is re-extracted from audio. B2 uses
+Notebook 02's model routes and full-cohort scaling. A candidate Fig. 5 is written to
+`outputs/biomarker_impact/figures/fig5_biomarker_impact.png` (and `.pdf`).
+
+### How to run (Windows PowerShell)
+
+Steps 1–3 above apply (same branch, same environment, Notebook 02 final run). Then:
+
+1. Point the notebook at the Paper 2 repository if it is not in the same parent folder as this one:
+
+   ```powershell
+   $env:PAPER2_ROOT = "C:\path\to\paper2_leakage_final"
+   ```
+
+   It must contain `data\processed\acoustic_features_frozen.csv`, `data\manifests\a_registry.csv` and
+   `outputs\goal3\stageE_controlled_perturbation_v1_0\final\tables\`. If your Stage E tables are elsewhere,
+   also set `$env:PAPER2_GOAL3_TABLES` to that `tables` folder.
+
+2. Run it:
+
+   ```powershell
+   jupyter nbconvert --to notebook --execute --ExecutePreprocessor.timeout=3600 `
+     --output 09_biomarker_impact_executed.ipynb notebooks\09_biomarker_impact.ipynb
+   ```
+
+   It takes a few minutes (about 90 small mixed models).
+
+3. Share `outputs\biomarker_impact\biomarker_impact_summary.md`, the `outputs\biomarker_impact\tables\`
+   folder and `outputs\biomarker_impact\figures\fig5_biomarker_impact.png` (all aggregate).
+
+The notebook stops with a clear message if the recording or participant identifiers differ between the
+two repositories.

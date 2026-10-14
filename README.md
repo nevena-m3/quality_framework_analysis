@@ -109,6 +109,7 @@ Then run notebooks from top to bottom in numeric order:
 | 6 | `06_family_human_correspondence.ipynb` | Family-matched signal–human correspondence with participant-aware support gates. | `outputs/goal3_human_correspondence/stage2_construct_matched_correspondence/` |
 | 7 | `07_item_mapping_atlas.ipynb` | Exploratory item-feature mapping atlas and rater-stratified diagnostics. | `outputs/goal3_human_correspondence/stage3_item_mapping_atlas/` |
 | 8 | `08_revision_analyses.ipynb` | Revision analyses for the JBHI submission: normal-bulbar cohort check, availability by severity, separability-class summaries, family-contrast sensitivities. Requires final outputs of 02 and 03. See [docs/REVISION_ANALYSES.md](docs/REVISION_ANALYSES.md). | `outputs/revision_analyses/` |
+| 9 | `09_biomarker_impact.ipynb` | Biomarker impact for the JBHI submission: controlled degradation of Bamboo speech measures relative to the real ALS–control difference, and real-cohort associations with technically flagged recordings excluded. Requires final outputs of 02 and Paper 2's Goal 3 Stage E. See [docs/REVISION_ANALYSES.md](docs/REVISION_ANALYSES.md). | `outputs/biomarker_impact/` |
 
 The long-running notebooks default to their frozen final settings (up to 2,000
 bootstrap replicates and 10,000 permutations). For development only, set each
