@@ -135,7 +135,7 @@ def style_rows(ax, ylim, separators=(), xgrid=True, null=None):
     for s in separators:
         ax.axhline(s, color='0.85', lw=0.5, zorder=0)
     if null is not None:
-        ax.axvline(null, color='0.55', ls='--', lw=0.7, zorder=0)
+        ax.axvline(null, color='0.4', ls='--', lw=0.8, zorder=1.5)
 
 
 # ==================================================================
