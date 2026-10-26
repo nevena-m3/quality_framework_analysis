@@ -108,6 +108,11 @@ PALETTES = {
     'classic': dict(control='#1f77b4', als='#ff7f0e', fam=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'],
                     div='RdBu_r', rho_lim=1.0, other='#8c564b',
                     muted='#8c8c8c', connect='#cfcfcf'),
+    # Classic look with the family colours of Fig. 1, so all figures share one family key; the
+    # cohort pair moves to ink and brown so it cannot be read as a family.
+    'fig1': dict(control='#222222', als='#8c564b', fam=['#e8590c', '#2e7d32', '#1f5fbf', '#6a3d9a'],
+                 dist='#d62728', temp='#00838f', between='#222222',
+                 div='RdBu_r', rho_lim=1.0, muted='#8c8c8c', connect='#cfcfcf'),
     # Midnight blue and blue-grey, burgundy only for the second series; family shown by shade and label.
     'midnight_mono': dict(control='#8A9BB8', als='#7D1D3F', between='#14213D', mark='#14213D',
                           fam=['#14213D', '#3A5683', '#6F8AB3', '#A3B5D1'],
@@ -136,7 +141,7 @@ def apply_palette(name: str) -> None:
         BETWEEN_COLOR=pal.get('between', pal['control']), WITHIN_COLOR=pal['als'], DIVERGING=cmap,
         MARK_COLOR=pal.get('mark'), RHO_LIM=pal.get('rho_lim', 0.8),
         MUTED=pal.get('muted', tint(pal['control'], 0.6)), CONNECT=pal.get('connect', tint(pal['control'], 0.8)),
-        FAMILY_COLORS={**dict(zip(FAMILY_ORDER, pal['fam'])), 'QDIST': other, 'QTEMP': other})
+        FAMILY_COLORS={**dict(zip(FAMILY_ORDER, pal['fam'])), 'QDIST': pal.get('dist', other), 'QTEMP': pal.get('temp', other)})
 
 
 def find(root: Path, name: str, required: bool = True) -> Path | None:
@@ -844,7 +849,7 @@ def main() -> None:
                         default=Path(os.environ.get('PAPER1_ANALYSIS_ROOT', repo)) / 'outputs')
     parser.add_argument('--out', type=Path, default=repo / 'outputs' / 'print_figures')
     parser.add_argument('--only', choices=['2', '3', '4'], nargs='*')
-    parser.add_argument('--palette', choices=sorted(PALETTES), default='classic',
+    parser.add_argument('--palette', choices=sorted(PALETTES), default='fig1',
                         help='colour palette (default: classic, chosen for the manuscript)')
     args = parser.parse_args()
     builders = {'2': build_fig2, '3': build_fig3, '4': build_fig4}
