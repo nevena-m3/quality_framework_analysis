@@ -38,13 +38,13 @@ FS = 8.0          # ticks, labels, legends
 FS_TITLE = 8.5    # panel titles
 FS_LETTER = 10.0  # panel letters
 
-INK = '#0b0b0b'     # primary text and significant estimates
-INK2 = '#52514e'    # secondary text, axis labels
-MUTED = '#9a9891'   # non-significant estimates, null lines
-AXIS = '#c3c2b7'    # spines and ticks
-GRID = '#e8e7e1'    # hairline grid
-BAND = '#f4f3ef'    # alternating row band
-ACCENT = '#eb6834'  # second series (ALS, within-participant, positive agreement)
+INK = '#1d1d1f'     # primary text and significant estimates
+INK2 = '#55534e'    # secondary text, axis labels
+MUTED = '#a19e96'   # non-significant estimates, null lines
+AXIS = '#c9c6bd'    # spines and ticks
+GRID = '#ebe9e3'    # hairline grid
+BAND = '#f5f3ee'    # alternating row band
+ACCENT = '#c4553a'  # second series (ALS, within-participant, positive agreement)
 
 mpl.rcParams.update({
     'font.family': 'sans-serif',
@@ -78,18 +78,18 @@ mpl.rcParams.update({
     'svg.fonttype': 'none',
 })
 
-# Family identity: blue, aqua, yellow, magenta (validated as a categorical set;
+# Family identity: steel blue, teal, ochre, plum (validated as a categorical set;
 # every use is also labelled, so colour never carries identity alone).
-CONTROL_COLOR, ALS_COLOR = '#7d7c77', ACCENT
+CONTROL_COLOR, ALS_COLOR = '#8f8c85', ACCENT
 BETWEEN_COLOR, WITHIN_COLOR = INK, ACCENT
 FAMILY_ORDER = ['QADD', 'QGAIN', 'QREV', 'QCHAN']
-FAMILY_COLORS = {'QADD': '#2a78d6', 'QGAIN': '#1baf7a', 'QREV': '#eda100', 'QCHAN': '#e87ba4',
-                 'QDIST': '#b4b2a9', 'QTEMP': '#b4b2a9'}
+FAMILY_COLORS = {'QADD': '#34609e', 'QGAIN': '#2c9c88', 'QREV': '#d39b2d', 'QCHAN': '#9c3f74',
+                 'QDIST': '#bdbab1', 'QTEMP': '#bdbab1'}
 ROW_GAP = 0.65  # vertical gap between families, in row units
 
-# Diverging blue - neutral grey - red, equal steps per arm.
+# Diverging steel blue - warm grey - terracotta, equal steps per arm.
 DIVERGING = mpl.colors.LinearSegmentedColormap.from_list(
-    'blue_grey_red', ['#0d366b', '#2a78d6', '#a9cbf2', '#f0efec', '#f4b09f', '#e34948', '#7d1a1a'])
+    'blue_grey_red', ['#1f3d66', '#3f6ea8', '#a8bfdb', '#f2f0eb', '#e6b5a3', '#c4553a', '#7a2e1d'])
 DIVERGING.set_bad((0, 0, 0, 0))
 
 
@@ -113,6 +113,12 @@ def as_bool(series: pd.Series) -> pd.Series:
     return series.astype(str).str.strip().str.lower().isin(['true', '1', 'yes'])
 
 
+def tidy(label) -> str:
+    """House style for measure names: en dash in 'speech–pause', no trailing 'present'."""
+    text = str(label).replace(' present', '').strip()
+    return text.replace('Speech-pause', 'Speech–pause').replace('speech-pause', 'speech–pause')
+
+
 def head(ax, letter, title='', dx=-14, dy=5, gap=11):
     """Panel letter and title on one baseline, just above the axes' top-left corner."""
     ax.annotate(letter, xy=(0, 1), xycoords='axes fraction', xytext=(dx, dy), textcoords='offset points',
@@ -131,7 +137,7 @@ def or_axis(ax, values):
     ax.set_xlim(lo / 1.2, hi * 1.2)
     ticks = [t for t in [0.25, 0.5, 1, 2, 4, 8] if lo <= t <= hi]
     ax.xaxis.set_major_locator(FixedLocator(ticks))
-    ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f'{v:g}'))
+    ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f'{v:g}'.replace('-', '−')))
     ax.xaxis.set_minor_locator(NullLocator())
     ax.xaxis.set_minor_formatter(NullFormatter())
 
@@ -276,11 +282,9 @@ def build_fig2(root: Path, out: Path) -> Path:
     n_rows = ys[-1] + 1
 
     # Binary strip: two QCHAN deficits, then sparse QDIST/QTEMP events.
-    sparse_names = ['Hard clipping', 'Dropout-like', 'Frozen audio']
     strip_rows = [(f, lbl, fam, t) for f, lbl, fam, t in
                   zip(one['feature'], one['short_label'], one['family'], one['inference_tier'])]
-    strip_rows += [(f, sparse_names[i] if i < len(sparse_names) else lbl, fam, 'secondary')
-                   for i, (f, lbl, fam) in enumerate(zip(spr['feature'], spr['short_label'], spr['family']))]
+    strip_rows += [(f, lbl, fam, 'secondary') for f, lbl, fam in zip(spr['feature'], spr['short_label'], spr['family'])]
     sys_ = grouped_positions([r[2] for r in strip_rows])
     spos = {r[0]: yv for r, yv in zip(strip_rows, sys_)}
     sylim = (sys_[-1] + 0.6, -0.6)
@@ -315,12 +319,12 @@ def build_fig2(root: Path, out: Path) -> Path:
     for fam, yy in fam_span.items():
         family_rail(lab, fam, yy[0], yy[-1], name_x=0.04)
     for r in cont.itertuples(index=False):
-        lab.text(0.32, pos[r.feature], r.short_label, ha='left', va='center',
+        lab.text(0.32, pos[r.feature], tidy(r.short_label), ha='left', va='center',
                  fontweight='bold' if r.inference_tier == 'core' else 'normal')
     fam_strip = {}
     for f, lbl, fam, t in strip_rows:
         fam_strip.setdefault(fam, []).append(spos[f])
-        slab.text(0.32, spos[f], lbl, ha='left', va='center',
+        slab.text(0.32, spos[f], tidy(lbl), ha='left', va='center',
                   fontweight='bold' if t == 'core' else 'normal')
     for fam, yy in fam_strip.items():
         family_rail(slab, fam, yy[0], yy[-1], name_x=0.04)
@@ -384,7 +388,7 @@ def build_fig2(root: Path, out: Path) -> Path:
     style_rows(ax, ylim, null=0)
     ax.set_title('Annual change', loc='left', pad=4, color=INK2)
     ax.xaxis.set_major_locator(MaxNLocator(3))
-    ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f'{v:g}'))
+    ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f'{v:g}'.replace('-', '−')))
     ax.set_xlabel('IQR units\nper year', labelpad=2)
     lp = long_p.copy()
     if not lp.empty:
@@ -392,7 +396,7 @@ def build_fig2(root: Path, out: Path) -> Path:
         forest(sx, lp, spos, 'o', 'ol', 'oh')
         or_axis(sx, pd.concat([lp['ol'], lp['oh']]))
     style_rows(sx, sylim, null=1)
-    sx.set_xlabel('Annual OR', labelpad=2)
+    sx.set_xlabel('Odds ratio\nper year', labelpad=2)
 
     # C: cohort difference and bulbar associations (per point of worse bulbar function).
     ax, sx = axes_pair(4)
@@ -401,7 +405,7 @@ def build_fig2(root: Path, out: Path) -> Path:
     ax.set_title('ALS − control', loc='left', pad=4, color=INK2)
     ax.set_xlabel('IQR units', labelpad=2)
     ax.xaxis.set_major_locator(MaxNLocator(3))
-    ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f'{v:g}'))
+    ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f'{v:g}'.replace('-', '−')))
     cp = coh_p.copy()
     cp['o'], cp['ol'], cp['oh'] = np.exp(cp['estimate']), np.exp(cp['ci95_low']), np.exp(cp['ci95_high'])
     forest(sx, cp, spos, 'o', 'ol', 'oh')
@@ -418,13 +422,13 @@ def build_fig2(root: Path, out: Path) -> Path:
         ax.set_title(title, loc='left', pad=4, color=INK2)
         ax.set_xlabel('IQR units per\npoint worse', labelpad=2)
         ax.xaxis.set_major_locator(MaxNLocator(3))
-        ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f'{v:g}'))
+        ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f'{v:g}'.replace('-', '−')))
         p = bul_p.loc[bul_p['target_term'].eq(term)].copy()
         p['o'], p['ol'], p['oh'] = np.exp(-p['estimate']), np.exp(-p['ci95_high']), np.exp(-p['ci95_low'])
         forest(sx, p, spos, 'o', 'ol', 'oh')
         or_axis(sx, pd.concat([p['ol'], p['oh']]))
         style_rows(sx, sylim, null=1)
-        sx.set_xlabel('OR per point', labelpad=2)
+        sx.set_xlabel('Odds ratio per\npoint worse', labelpad=2)
 
     # Group headers: letter + title with a hairline rule spanning the group's columns.
     y_hdr = (fig_h - 0.21) / fig_h
@@ -514,7 +518,7 @@ def build_fig3(root: Path, out: Path) -> Path:
             start += size
         head(ax, L, title, dx=-24)
     cax = ax_in(6.62, 4.45, 0.09, 1.70)
-    thin_colorbar(fig, img, cax, 'Rank correlation (ρ)', [-1, -0.5, 0, 0.5, 1])
+    thin_colorbar(fig, img, cax, 'Rank correlation, ρ', [-1, -0.5, 0, 0.5, 1])
 
     # C: between vs within scatter.
     ax = ax_in(0.55, 1.43, 1.75, 1.75)
@@ -540,7 +544,7 @@ def build_fig3(root: Path, out: Path) -> Path:
     ax.set_xlabel('Between-participant ρ', labelpad=2)
     ax.set_ylabel('Within-participant ρ', labelpad=1)
     ax.legend(loc='lower right', handletextpad=0.1, borderaxespad=0.1, labelspacing=0.3)
-    head(ax, 'C', 'Between vs within', dx=-30)
+    head(ax, 'C', 'Between vs. within', dx=-30)
 
     # D: scree with parallel analysis.
     ax = ax_in(2.92, 1.43, 1.42, 1.75)
@@ -551,7 +555,7 @@ def build_fig3(root: Path, out: Path) -> Path:
                 alpha=0.7, zorder=2)
         ax.plot(c['component'], c['variance_explained_percent'], marker=mk, ms=3.4, lw=1.0, color=col,
                 mec='white', mew=0.4, label=level.capitalize(), zorder=3)
-    ax.plot([], [], ls=(0, (3, 2)), lw=0.8, color=MUTED, label='95th pct. null')
+    ax.plot([], [], ls=(0, (3, 2)), lw=0.8, color=MUTED, label='Null, 95th percentile')
     lo_v, hi_v = ax.get_ylim()
     ax.set_ylim(lo_v, hi_v + 0.45 * (hi_v - lo_v))
     ax.set_xticks(range(1, int(k) + 1))
@@ -611,9 +615,9 @@ def build_fig3(root: Path, out: Path) -> Path:
                                                  color=FAMILY_COLORS[F], lw=0))
         fig.text((x + 0.14) / PAGE_WIDTH, 0.81 / fig_h, F, fontweight='bold', va='bottom')
         for j, r in enumerate(rows.itertuples(index=False)):
-            yy = (0.71 - j * 0.125) / fig_h
+            yy = (0.72 - j * 0.12) / fig_h
             fig.text(x / PAGE_WIDTH, yy, r.feature_code, fontweight='bold', color=INK2, va='top')
-            fig.text((x + 0.25) / PAGE_WIDTH, yy, str(r.short_label).replace('†', ''), va='top')
+            fig.text((x + 0.25) / PAGE_WIDTH, yy, tidy(str(r.short_label).replace('†', '')), va='top')
     fig.add_artist(mpl.lines.Line2D([0.10 / PAGE_WIDTH, (PAGE_WIDTH - 0.10) / PAGE_WIDTH],
                                     [1.01 / fig_h] * 2, color=AXIS, lw=0.5))
     return save(fig, out, 'fig3')
@@ -624,6 +628,10 @@ def build_fig3(root: Path, out: Path) -> Path:
 # ==================================================================
 def build_fig4(root: Path, out: Path) -> Path:
     rel = read(root, 'main_panel_A_human_reliability_context.csv')
+    reg = read(root, 'feature_registry.csv', required=False)
+    # Measure names as in Figs. 2-3 when the registry is available.
+    short = ({} if reg is None else
+             reg.set_index('feature')['short_label'].astype(str).str.replace('†', '').to_dict())
     fp = read(root, 'main_panel_B_family_correspondence.csv')
     spec = read(root, 'main_panel_C_specificity_models.csv')
     smap = read(root, 'specificity_feature_map.csv', required=False)
@@ -670,7 +678,7 @@ def build_fig4(root: Path, out: Path) -> Path:
     xpos = np.arange(len(rel))
     for xi, a, b in zip(xpos, rel['gwet_ac1'], rel['mean_pairwise_positive_agreement']):
         ax.plot([xi, xi], [a, b], color=AXIS, lw=1.6, solid_capstyle='butt', zorder=2)
-    ax.plot(xpos, rel['gwet_ac1'], 'o', ms=4.6, color=INK, mec='white', mew=0.5, label='Gwet AC1', zorder=3)
+    ax.plot(xpos, rel['gwet_ac1'], 'o', ms=4.6, color=INK, mec='white', mew=0.5, label='Gwet’s AC1', zorder=3)
     ax.plot(xpos, rel['mean_pairwise_positive_agreement'], 's', ms=4.4, color=ACCENT, mec='white', mew=0.5,
             label='Positive agreement', zorder=3)
     ax.set_xticks(xpos)
@@ -698,7 +706,7 @@ def build_fig4(root: Path, out: Path) -> Path:
     for F, yy in spans.items():
         family_rail(lab, F, yy[0], yy[-1], name_x=0.035)
     for f in feats:
-        lab.text(0.33, ypos[f], str(labels.loc[f, 'feature_label']).replace(' present', ''),
+        lab.text(0.33, ypos[f], tidy(short.get(f, labels.loc[f, 'feature_label'])),
                  ha='left', va='center')
 
     # B: construct-matched odds ratios.
@@ -713,7 +721,7 @@ def build_fig4(root: Path, out: Path) -> Path:
         ax.plot([r['oe']], [y], 'o', ms=4.2, mfc=col if sig else 'white', mec=col, mew=0.9, zorder=4)
     or_axis(ax, pd.concat([fp['ol'], fp['oh']]))
     style_rows(ax, ylim, null=1)
-    ax.set_xlabel('Odds ratio (>1 = prespecified direction)', labelpad=2)
+    ax.set_xlabel('Odds ratio (expected direction > 1)', labelpad=2)
     head(ax, 'B', 'Construct-matched association', dx=-14)
 
     # C: cross-family specificity, with the same family gaps as the rows.
@@ -747,7 +755,7 @@ def build_fig4(root: Path, out: Path) -> Path:
     for j, hf in enumerate(human_fams):
         ax.add_patch(mpl.patches.Rectangle((j + 0.06, ylim[0] + 0.12), 0.88, 0.16, color=FAMILY_COLORS[hf],
                                            clip_on=False, lw=0))
-    ax.set_xlabel('Listener-labelled family', labelpad=2)
+    ax.set_xlabel('Listener-labeled family', labelpad=2)
     head(ax, 'C', 'Cross-family specificity', dx=-14)
     cax = ax_in(4.62 + cw * len(human_fams) + 0.14, y0, 0.09, body_h)
     img = mpl.cm.ScalarMappable(norm=norm, cmap=DIVERGING)
