@@ -91,6 +91,7 @@ FAMILY_ORDER = ['QADD', 'QGAIN', 'QREV', 'QCHAN']
 FAMILY_COLORS = {'QADD': '#3C5488', 'QGAIN': '#00A087', 'QREV': '#E5A019', 'QCHAN': '#B5446E',
                  'QDIST': '#7E6148', 'QTEMP': '#7E6148'}
 MARK_COLOR = None  # one colour for all estimates (monochrome palettes)
+RHO_LIM = 0.8      # colour-scale limit for the correlation heatmaps
 FEAT_FAMILY: dict = {}  # feature -> family, filled by the builders
 ROW_GAP = 0.65  # vertical gap between families, in row units
 
@@ -103,6 +104,10 @@ DIVERGING.set_bad((0, 0, 0, 0))
 # Alternative palettes (choose with --palette); each sets the cohort pair, the four family colours
 # and the diverging heatmap scale. The default above is the NPG palette.
 PALETTES = {
+    # Classic matplotlib/Tableau colours with the RdBu heatmap scale (Nev's choice for the manuscript).
+    'classic': dict(control='#1f77b4', als='#ff7f0e', fam=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728'],
+                    div='RdBu_r', rho_lim=1.0, other='#8c564b',
+                    muted='#8c8c8c', connect='#cfcfcf'),
     # Midnight blue and blue-grey, burgundy only for the second series; family shown by shade and label.
     'midnight_mono': dict(control='#8A9BB8', als='#7D1D3F', between='#14213D', mark='#14213D',
                           fam=['#14213D', '#3A5683', '#6F8AB3', '#A3B5D1'],
@@ -122,14 +127,15 @@ PALETTES = {
 
 def apply_palette(name: str) -> None:
     pal = PALETTES[name]
-    cmap = mpl.colors.LinearSegmentedColormap.from_list(name, pal['div'])
+    cmap = (mpl.colormaps[pal['div']].copy() if isinstance(pal['div'], str)
+            else mpl.colors.LinearSegmentedColormap.from_list(name, pal['div']))
     cmap.set_bad((0, 0, 0, 0))
-    other = tint(pal['control'], 0.35)
+    other = pal.get('other', tint(pal['control'], 0.35))
     globals().update(
         ACCENT=pal['als'], CONTROL_COLOR=pal['control'], ALS_COLOR=pal['als'],
         BETWEEN_COLOR=pal.get('between', pal['control']), WITHIN_COLOR=pal['als'], DIVERGING=cmap,
-        MARK_COLOR=pal.get('mark'),
-        MUTED=tint(pal['control'], 0.6), CONNECT=tint(pal['control'], 0.8),
+        MARK_COLOR=pal.get('mark'), RHO_LIM=pal.get('rho_lim', 0.8),
+        MUTED=pal.get('muted', tint(pal['control'], 0.6)), CONNECT=pal.get('connect', tint(pal['control'], 0.8)),
         FAMILY_COLORS={**dict(zip(FAMILY_ORDER, pal['fam'])), 'QDIST': other, 'QTEMP': other})
 
 
@@ -284,6 +290,7 @@ def thin_colorbar(fig, img, cax, label, ticks, extend='neither'):
     cb = fig.colorbar(img, cax=cax, extend=extend, extendfrac=0.06)
     cb.outline.set_visible(False)
     cb.set_ticks(ticks)
+    cb.ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _: f'{v:g}'.replace('-', '−')))
     cb.ax.tick_params(length=2, width=0.5, color=AXIS)
     cb.set_label(label, labelpad=3, color=INK2)
     return cb
@@ -348,7 +355,7 @@ def build_fig2(root: Path, out: Path) -> Path:
     fig_h = top_h + cont_h + mid_h + strip_h + 0.52
     fig = plt.figure(figsize=(PAGE_WIDTH, fig_h))
     widths = [1.72, 0.90, 0.64, 0.75, 0.72, 0.70, 0.70]
-    left, right = 0.04, PAGE_WIDTH - 0.06
+    left, right = 0.04, PAGE_WIDTH - 0.12
     gaps = (right - left - sum(widths)) / (len(widths) - 1)
     xs, x = [], left
     for w in widths:
@@ -419,7 +426,7 @@ def build_fig2(root: Path, out: Path) -> Path:
                 sx.plot([0, val], [spos[f] + off] * 2, color=col, lw=3.2, solid_capstyle='butt', zorder=3)
                 sx.plot([val], [spos[f] + off], 'o', ms=2.6, color=col, mew=0, zorder=4)
     style_rows(sx, sylim)
-    sx.set_xlim(0, 100)
+    sx.set_xlim(0, 112)
     sx.set_xticks([0, 50, 100])
     sx.set_xlabel('Recordings (%)', labelpad=2)
 
@@ -457,7 +464,7 @@ def build_fig2(root: Path, out: Path) -> Path:
     style_rows(ax, ylim, null=0)
     ax.set_title('ALS − control', loc='left', pad=4, color=INK2)
     ax.set_xlabel('IQR units', labelpad=2)
-    ax.xaxis.set_major_locator(MaxNLocator(3))
+    ax.xaxis.set_major_locator(mpl.ticker.MultipleLocator(0.5))
     ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f'{v:g}'.replace('-', '−')))
     cp = coh_p.copy()
     cp['o'], cp['ol'], cp['oh'] = np.exp(cp['estimate']), np.exp(cp['ci95_low']), np.exp(cp['ci95_high'])
@@ -544,7 +551,7 @@ def build_fig3(root: Path, out: Path) -> Path:
         m = matrix(col)
         shown = np.where(lower, m, np.nan)
         img = ax.pcolormesh(edges, edges, np.ma.masked_invalid(expand(shown, real, real)), cmap=DIVERGING,
-                            vmin=-0.8, vmax=0.8, edgecolors='white', linewidth=0.35)
+                            vmin=-RHO_LIM, vmax=RHO_LIM, edgecolors='white', linewidth=0.35)
         for i in range(n):
             for j in range(i + 1):
                 if not np.isfinite(m[i, j]):
@@ -571,7 +578,8 @@ def build_fig3(root: Path, out: Path) -> Path:
             start += size
         head(ax, L, title, dx=-24)
     cax = ax_in(6.62, 4.45, 0.09, 1.70)
-    thin_colorbar(fig, img, cax, 'Rank correlation, ρ', [-0.8, -0.4, 0, 0.4, 0.8], extend='both')
+    thin_colorbar(fig, img, cax, 'Rank correlation, ρ', np.linspace(-RHO_LIM, RHO_LIM, 5),
+                  extend='both' if RHO_LIM < 1 else 'neither')
 
     # C: between vs within scatter.
     ax = ax_in(0.55, 1.43, 1.75, 1.75)
@@ -835,8 +843,8 @@ def main() -> None:
                         default=Path(os.environ.get('PAPER1_ANALYSIS_ROOT', repo)) / 'outputs')
     parser.add_argument('--out', type=Path, default=repo / 'outputs' / 'print_figures')
     parser.add_argument('--only', choices=['2', '3', '4'], nargs='*')
-    parser.add_argument('--palette', choices=sorted(PALETTES), default='midnight_mono',
-                        help='colour palette (default: midnight_mono, chosen for the manuscript)')
+    parser.add_argument('--palette', choices=sorted(PALETTES), default='classic',
+                        help='colour palette (default: classic, chosen for the manuscript)')
     args = parser.parse_args()
     builders = {'2': build_fig2, '3': build_fig3, '4': build_fig4}
     apply_palette(args.palette)
