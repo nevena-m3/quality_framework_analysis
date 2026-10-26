@@ -99,6 +99,34 @@ DIVERGING = mpl.colors.LinearSegmentedColormap.from_list(
 DIVERGING.set_bad((0, 0, 0, 0))
 
 
+# Alternative palettes (choose with --palette); each sets the cohort pair, the four family colours
+# and the diverging heatmap scale. The default above is the NPG palette.
+PALETTES = {
+    'midnight': dict(control='#1B2A49', als='#B5485D', fam=['#1B2A49', '#4A7C8C', '#C9A66B', '#8E5572'],
+                     div=['#1B2A49', '#5A6F96', '#B9C3D8', '#F7F5F0', '#E2B4BB', '#B5485D', '#6E1F31']),
+    'petrol': dict(control='#0F4C5C', als='#C8693A', fam=['#2F6F8F', '#6A994E', '#D4A24C', '#9A3B4F'],
+                   div=['#0A3540', '#0F4C5C', '#9DBFC7', '#F7F5F0', '#EBC0A6', '#C8693A', '#7A3518']),
+    'oxford': dict(control='#23395B', als='#8C1C3A', fam=['#23395B', '#3E7C76', '#B8860B', '#8C1C3A'],
+                   div=['#162540', '#23395B', '#A9B6CC', '#F8F7F4', '#D9A3B0', '#8C1C3A', '#4F0E20']),
+    'ocean': dict(control='#005F73', als='#AE2012', fam=['#005F73', '#0A9396', '#EE9B00', '#AE2012'],
+                  div=['#003945', '#005F73', '#94C8CF', '#F7F4EC', '#E9A89F', '#AE2012', '#5F0F08']),
+    'slate': dict(control='#2E3A59', als='#7B4B7A', fam=['#2E3A59', '#5E8C7A', '#D9A05B', '#7B4B7A'],
+                  div=['#1C2438', '#2E3A59', '#AEB5C8', '#F7F6F2', '#CDB3CC', '#7B4B7A', '#45284A']),
+}
+
+
+def apply_palette(name: str) -> None:
+    pal = PALETTES[name]
+    cmap = mpl.colors.LinearSegmentedColormap.from_list(name, pal['div'])
+    cmap.set_bad((0, 0, 0, 0))
+    other = tint(pal['control'], 0.35)
+    globals().update(
+        ACCENT=pal['als'], CONTROL_COLOR=pal['control'], ALS_COLOR=pal['als'],
+        BETWEEN_COLOR=pal['control'], WITHIN_COLOR=pal['als'], DIVERGING=cmap,
+        MUTED=tint(pal['control'], 0.6), CONNECT=tint(pal['control'], 0.8),
+        FAMILY_COLORS={**dict(zip(FAMILY_ORDER, pal['fam'])), 'QDIST': other, 'QTEMP': other})
+
+
 def find(root: Path, name: str, required: bool = True) -> Path | None:
     direct = [p for p in root.rglob(name) if p.is_file() and 'checkpoint' not in str(p).lower()]
     if not direct:
@@ -801,8 +829,11 @@ def main() -> None:
                         default=Path(os.environ.get('PAPER1_ANALYSIS_ROOT', repo)) / 'outputs')
     parser.add_argument('--out', type=Path, default=repo / 'outputs' / 'print_figures')
     parser.add_argument('--only', choices=['2', '3', '4'], nargs='*')
+    parser.add_argument('--palette', choices=sorted(PALETTES), help='alternative colour palette')
     args = parser.parse_args()
     builders = {'2': build_fig2, '3': build_fig3, '4': build_fig4}
+    if args.palette:
+        apply_palette(args.palette)
     for k in args.only or ['2', '3', '4']:
         print(builders[k](args.source_root, args.out))
 
