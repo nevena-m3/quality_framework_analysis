@@ -38,13 +38,14 @@ FS = 8.0          # ticks, labels, legends
 FS_TITLE = 8.5    # panel titles
 FS_LETTER = 10.0  # panel letters
 
-INK = '#1d1d1f'     # primary text and significant estimates
-INK2 = '#55534e'    # secondary text, axis labels
-MUTED = '#a19e96'   # non-significant estimates, null lines
-AXIS = '#c9c6bd'    # spines and ticks
-GRID = '#ebe9e3'    # hairline grid
-BAND = '#f5f3ee'    # alternating row band
-ACCENT = '#c4553a'  # second series (ALS, within-participant, positive agreement)
+INK = '#14213d'     # navy ink: text and significant estimates
+INK2 = '#34425e'    # secondary text, axis labels
+MUTED = '#8ea6c8'   # light steel blue: non-significant estimates
+AXIS = '#5d6d88'    # spines and ticks
+GRID = '#dfe6f0'    # hairline grid
+BAND = '#eef3fa'    # alternating row band (ice blue)
+RULE = '#b7c3d6'    # header rules and connectors
+ACCENT = '#c0392b'  # crimson: second series (ALS, within-participant, positive agreement)
 
 mpl.rcParams.update({
     'font.family': 'sans-serif',
@@ -78,18 +79,18 @@ mpl.rcParams.update({
     'svg.fonttype': 'none',
 })
 
-# Family identity: steel blue, teal, ochre, plum (validated as a categorical set;
+# Family identity: sapphire, teal, gold, plum (validated as a categorical set, all pairs;
 # every use is also labelled, so colour never carries identity alone).
-CONTROL_COLOR, ALS_COLOR = '#8f8c85', ACCENT
-BETWEEN_COLOR, WITHIN_COLOR = INK, ACCENT
+CONTROL_COLOR, ALS_COLOR = '#1f4e8c', ACCENT
+BETWEEN_COLOR, WITHIN_COLOR = '#1f4e8c', ACCENT
 FAMILY_ORDER = ['QADD', 'QGAIN', 'QREV', 'QCHAN']
-FAMILY_COLORS = {'QADD': '#34609e', 'QGAIN': '#2c9c88', 'QREV': '#d39b2d', 'QCHAN': '#9c3f74',
-                 'QDIST': '#bdbab1', 'QTEMP': '#bdbab1'}
+FAMILY_COLORS = {'QADD': '#1f5aa6', 'QGAIN': '#2aa198', 'QREV': '#e3a71f', 'QCHAN': '#9b2f6a',
+                 'QDIST': '#9fb1cc', 'QTEMP': '#9fb1cc'}
 ROW_GAP = 0.65  # vertical gap between families, in row units
 
-# Diverging steel blue - warm grey - terracotta, equal steps per arm.
+# Diverging sapphire - near-white - crimson, equal steps per arm.
 DIVERGING = mpl.colors.LinearSegmentedColormap.from_list(
-    'blue_grey_red', ['#1f3d66', '#3f6ea8', '#a8bfdb', '#f2f0eb', '#e6b5a3', '#c4553a', '#7a2e1d'])
+    'blue_grey_red', ['#0b3c6f', '#2e6db4', '#a6c8ea', '#f7f7f5', '#f2a68f', '#c0392b', '#6b0f1a'])
 DIVERGING.set_bad((0, 0, 0, 0))
 
 
@@ -172,7 +173,7 @@ def style_rows(ax, ylim, xgrid=True, null=None):
         ax.grid(axis='x', color=GRID, lw=0.5)
         ax.set_axisbelow(True)
     if null is not None:
-        ax.axvline(null, color=MUTED, lw=0.7, zorder=1.5)
+        ax.axvline(null, color=INK2, lw=0.7, ls=(0, (3, 2)), zorder=1.5)
 
 
 def bands(fig, ax, rows, x0, x1, half=0.5):
@@ -438,12 +439,12 @@ def build_fig2(root: Path, out: Path) -> Path:
         fig.text(x0, y_hdr, L, fontsize=FS_LETTER, fontweight='bold', ha='left', va='baseline')
         fig.text(x0 + 0.16 / PAGE_WIDTH, y_hdr, text, fontsize=FS_TITLE, fontweight='bold', ha='left',
                  va='baseline')
-        fig.add_artist(mpl.lines.Line2D([x0, x1], [y_hdr - 0.07 / fig_h] * 2, color=AXIS, lw=0.6))
+        fig.add_artist(mpl.lines.Line2D([x0, x1], [y_hdr - 0.07 / fig_h] * 2, color=RULE, lw=0.6))
     # Sub-header over the two bulbar columns.
     x0, x1 = xs[5][0], xs[6][0] + xs[6][1]
     y_sub = (fig_h - 0.40) / fig_h
     fig.text((x0 + x1) / 2, y_sub, 'Bulbar severity', ha='center', va='baseline', color=INK2)
-    fig.add_artist(mpl.lines.Line2D([x0, x1], [y_sub - 0.05 / fig_h] * 2, color=AXIS, lw=0.5))
+    fig.add_artist(mpl.lines.Line2D([x0, x1], [y_sub - 0.05 / fig_h] * 2, color=RULE, lw=0.5))
     return save(fig, out, 'fig2')
 
 
@@ -526,12 +527,12 @@ def build_fig3(root: Path, out: Path) -> Path:
     bf = d.loc[~d['same_family'] & ~d['structural_dependency']]
     wf = d.loc[d['same_family'] & ~d['structural_dependency']]
     sd = d.loc[d['structural_dependency']]
-    ax.axhline(0, color=AXIS, lw=0.5, zorder=0)
-    ax.axvline(0, color=AXIS, lw=0.5, zorder=0)
-    ax.plot([-1, 1], [-1, 1], ls=(0, (3, 2)), color=MUTED, lw=0.7, zorder=1)
+    ax.axhline(0, color=RULE, lw=0.5, zorder=0)
+    ax.axvline(0, color=RULE, lw=0.5, zorder=0)
+    ax.plot([-1, 1], [-1, 1], ls=(0, (3, 2)), color=INK2, lw=0.6, zorder=1)
     ax.scatter(bf['between_rho'], bf['within_rho'], s=11, facecolors='none', edgecolors=MUTED, lw=0.6,
                label='Between-family', zorder=2)
-    ax.scatter(wf['between_rho'], wf['within_rho'], s=13, color=INK, lw=0, label='Within-family', zorder=3)
+    ax.scatter(wf['between_rho'], wf['within_rho'], s=13, color='#1f4e8c', lw=0, label='Within-family', zorder=3)
     ax.scatter(sd['between_rho'], sd['within_rho'], s=24, marker='D', color=ACCENT, edgecolor='white',
                lw=0.5, label='Mechanically related', zorder=4)
     ax.set_xlim(-1.02, 1.02)
@@ -555,7 +556,7 @@ def build_fig3(root: Path, out: Path) -> Path:
                 alpha=0.7, zorder=2)
         ax.plot(c['component'], c['variance_explained_percent'], marker=mk, ms=3.4, lw=1.0, color=col,
                 mec='white', mew=0.4, label=level.capitalize(), zorder=3)
-    ax.plot([], [], ls=(0, (3, 2)), lw=0.8, color=MUTED, label='Null, 95th percentile')
+    ax.plot([], [], ls=(0, (3, 2)), lw=0.8, color=INK2, label='Null, 95th percentile')
     lo_v, hi_v = ax.get_ylim()
     ax.set_ylim(lo_v, hi_v + 0.45 * (hi_v - lo_v))
     ax.set_xticks(range(1, int(k) + 1))
@@ -619,7 +620,7 @@ def build_fig3(root: Path, out: Path) -> Path:
             fig.text(x / PAGE_WIDTH, yy, r.feature_code, fontweight='bold', color=INK2, va='top')
             fig.text((x + 0.25) / PAGE_WIDTH, yy, tidy(str(r.short_label).replace('†', '')), va='top')
     fig.add_artist(mpl.lines.Line2D([0.10 / PAGE_WIDTH, (PAGE_WIDTH - 0.10) / PAGE_WIDTH],
-                                    [1.01 / fig_h] * 2, color=AXIS, lw=0.5))
+                                    [1.01 / fig_h] * 2, color=RULE, lw=0.5))
     return save(fig, out, 'fig3')
 
 
@@ -677,8 +678,8 @@ def build_fig4(root: Path, out: Path) -> Path:
     ax = ax_in(0.62, fig_h - 1.12, 5.0, 0.88)
     xpos = np.arange(len(rel))
     for xi, a, b in zip(xpos, rel['gwet_ac1'], rel['mean_pairwise_positive_agreement']):
-        ax.plot([xi, xi], [a, b], color=AXIS, lw=1.6, solid_capstyle='butt', zorder=2)
-    ax.plot(xpos, rel['gwet_ac1'], 'o', ms=4.6, color=INK, mec='white', mew=0.5, label='Gwet’s AC1', zorder=3)
+        ax.plot([xi, xi], [a, b], color=RULE, lw=1.6, solid_capstyle='butt', zorder=2)
+    ax.plot(xpos, rel['gwet_ac1'], 'o', ms=4.6, color='#1f4e8c', mec='white', mew=0.5, label='Gwet’s AC1', zorder=3)
     ax.plot(xpos, rel['mean_pairwise_positive_agreement'], 's', ms=4.4, color=ACCENT, mec='white', mew=0.5,
             label='Positive agreement', zorder=3)
     ax.set_xticks(xpos)
