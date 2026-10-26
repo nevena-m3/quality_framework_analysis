@@ -38,14 +38,15 @@ FS = 8.0          # ticks, labels, legends
 FS_TITLE = 8.5    # panel titles
 FS_LETTER = 10.0  # panel letters
 
-INK = '#14213d'     # navy ink: text and significant estimates
-INK2 = '#34425e'    # secondary text, axis labels
-MUTED = '#8ea6c8'   # light steel blue: non-significant estimates
-AXIS = '#5d6d88'    # spines and ticks
-GRID = '#dfe6f0'    # hairline grid
-BAND = '#eef3fa'    # alternating row band (ice blue)
-RULE = '#b7c3d6'    # header rules and connectors
-ACCENT = '#c0392b'  # crimson: second series (ALS, within-participant, positive agreement)
+INK = '#111111'     # text, spines, ticks
+INK2 = '#333333'    # axis labels
+MUTED = '#9fb0d8'   # open markers in scatter
+AXIS = '#111111'    # spines and ticks (Nature style: thin black axes)
+GRID = '#ececec'    # unused by default; kept for optional grids
+BAND = '#ffffff'    # no row bands
+RULE = '#111111'    # header rules
+CONNECT = '#c9d1e3' # dumbbell connectors
+ACCENT = '#E64B35'  # NPG red: ALS, within-participant, positive agreement
 
 mpl.rcParams.update({
     'font.family': 'sans-serif',
@@ -65,11 +66,13 @@ mpl.rcParams.update({
     'ytick.labelcolor': INK2,
     'legend.fontsize': FS,
     'legend.frameon': False,
-    'axes.linewidth': 0.6,
-    'xtick.major.width': 0.6,
-    'ytick.major.width': 0.6,
-    'xtick.major.size': 2.5,
-    'ytick.major.size': 2.5,
+    'axes.linewidth': 0.5,
+    'xtick.major.width': 0.5,
+    'ytick.major.width': 0.5,
+    'xtick.major.size': 3.0,
+    'ytick.major.size': 3.0,
+    'xtick.direction': 'out',
+    'ytick.direction': 'out',
     'xtick.major.pad': 2.0,
     'ytick.major.pad': 2.0,
     'axes.spines.top': False,
@@ -79,18 +82,20 @@ mpl.rcParams.update({
     'svg.fonttype': 'none',
 })
 
-# Family identity: sapphire, teal, gold, plum (validated as a categorical set, all pairs;
+# Nature Publishing Group style. Family identity: navy, green, gold, raspberry (validated as a
+# categorical set;
 # every use is also labelled, so colour never carries identity alone).
-CONTROL_COLOR, ALS_COLOR = '#1f4e8c', ACCENT
-BETWEEN_COLOR, WITHIN_COLOR = '#1f4e8c', ACCENT
+CONTROL_COLOR, ALS_COLOR = '#4DBBD5', ACCENT
+BETWEEN_COLOR, WITHIN_COLOR = '#3C5488', ACCENT
 FAMILY_ORDER = ['QADD', 'QGAIN', 'QREV', 'QCHAN']
-FAMILY_COLORS = {'QADD': '#1f5aa6', 'QGAIN': '#2aa198', 'QREV': '#e3a71f', 'QCHAN': '#9b2f6a',
-                 'QDIST': '#9fb1cc', 'QTEMP': '#9fb1cc'}
+FAMILY_COLORS = {'QADD': '#3C5488', 'QGAIN': '#00A087', 'QREV': '#E5A019', 'QCHAN': '#B5446E',
+                 'QDIST': '#7E6148', 'QTEMP': '#7E6148'}
+FEAT_FAMILY: dict = {}  # feature -> family, filled by the builders
 ROW_GAP = 0.65  # vertical gap between families, in row units
 
-# Diverging sapphire - near-white - crimson, equal steps per arm.
+# Diverging navy - white - NPG red, equal steps per arm.
 DIVERGING = mpl.colors.LinearSegmentedColormap.from_list(
-    'blue_grey_red', ['#0b3c6f', '#2e6db4', '#a6c8ea', '#f7f7f5', '#f2a68f', '#c0392b', '#6b0f1a'])
+    'blue_grey_red', ['#1d2f5e', '#3C5488', '#a3b2d9', '#f7f7f7', '#f4a796', '#E64B35', '#8a1c0f'])
 DIVERGING.set_bad((0, 0, 0, 0))
 
 
@@ -144,7 +149,8 @@ def or_axis(ax, values):
 
 
 def forest(ax, frame, positions, est, low, high, star=True, tier_col='inference_tier'):
-    """Estimate and 95% CI. Filled = core output; ink + star = q < 0.05; grey = not significant."""
+    """Estimate and 95% CI in the family colour. Filled = core output; full colour + star = q < 0.05;
+    pale tint = not significant."""
     for _, row in frame.iterrows():
         if row['feature'] not in positions:
             continue
@@ -154,7 +160,8 @@ def forest(ax, frame, positions, est, low, high, star=True, tier_col='inference_
         y = positions[row['feature']]
         q = row.get('q_value', np.nan)
         sig = star and np.isfinite(q) and q < 0.05
-        color = INK if (sig or not star) else MUTED
+        base = FAMILY_COLORS.get(FEAT_FAMILY.get(row['feature']), INK)
+        color = base if (sig or not star) else tint(base)
         face = color if row.get(tier_col, '') == 'core' else 'white'
         if np.isfinite(lo) and np.isfinite(hi):
             ax.plot([lo, hi], [y, y], color=color, lw=0.9, solid_capstyle='butt', zorder=3)
@@ -165,19 +172,22 @@ def forest(ax, frame, positions, est, low, high, star=True, tier_col='inference_
         ax.plot([e], [y], 'o', ms=3.9, mfc=face, mec=color, mew=0.9, zorder=4)
 
 
-def style_rows(ax, ylim, xgrid=True, null=None):
+def style_rows(ax, ylim, xgrid=False, null=None):
     ax.set_ylim(*ylim)
     ax.tick_params(axis='y', left=False, labelleft=False)
+    ax.spines['bottom'].set_position(('outward', 3))
     ax.spines['left'].set_visible(False)
     if xgrid:
         ax.grid(axis='x', color=GRID, lw=0.5)
         ax.set_axisbelow(True)
     if null is not None:
-        ax.axvline(null, color=INK2, lw=0.7, ls=(0, (3, 2)), zorder=1.5)
+        ax.axvline(null, color=INK, lw=0.5, ls=(0, (4, 2)), zorder=1.5)
 
 
 def bands(fig, ax, rows, x0, x1, half=0.5):
-    """Light full-width bands behind the given row positions (x0, x1 in figure fraction)."""
+    """Light full-width bands behind the given row positions (disabled in the Nature style)."""
+    if BAND.lower() == '#ffffff':
+        return
     to_fig = ax.transData + fig.transFigure.inverted()
     for y in rows:
         _, ya = to_fig.transform((0, y - half))
@@ -187,11 +197,18 @@ def bands(fig, ax, rows, x0, x1, half=0.5):
 
 
 def family_rail(ax, fam, y0, y1, x=0.0, name_x=0.06, name=True):
-    """Coloured vertical rail plus family name, in a label axis (x in axes fraction)."""
-    ax.plot([x, x], [y0 - 0.36, y1 + 0.36], color=FAMILY_COLORS.get(fam, MUTED), lw=2.6,
+    """Family name in its colour, centred on the family's rows, with a thin bracket."""
+    ax.plot([x, x], [y0 - 0.32, y1 + 0.32], color=FAMILY_COLORS.get(fam, INK), lw=0.8,
             solid_capstyle='butt', clip_on=False)
     if name:
-        ax.text(name_x, (y0 + y1) / 2, fam, ha='left', va='center', fontweight='bold', color=INK2)
+        ax.text(name_x, (y0 + y1) / 2, fam, ha='left', va='center', fontweight='bold',
+                color=FAMILY_COLORS.get(fam, INK))
+
+
+def tint(color, amount=0.5):
+    """Mix a colour with white (amount = share of white)."""
+    r, g, b = mpl.colors.to_rgb(color)
+    return (r + (1 - r) * amount, g + (1 - g) * amount, b + (1 - b) * amount)
 
 
 def grouped_positions(families):
@@ -269,6 +286,7 @@ def build_fig2(root: Path, out: Path) -> Path:
     sort = lambda f: f.assign(_r=f['family'].map(fam_rank)).sort_values(['_r', 'feature_order'])  # noqa: E731
     cont, one, spr = sort(cont), sort(one), sort(spr)
     tier = reg.set_index('feature')['inference_tier'].to_dict()
+    FEAT_FAMILY.update(reg.set_index('feature')['family'].to_dict())
     for frame in [pers, long_c, long_p, coh_c, coh_p, bul_c, bul_p]:
         if 'inference_tier' not in frame:
             frame['inference_tier'] = frame['feature'].map(tier)
@@ -293,7 +311,7 @@ def build_fig2(root: Path, out: Path) -> Path:
     row_h = 0.152
     top_h, mid_h = 0.66, 0.66
     cont_h, strip_h = row_h * (n_rows + 0.2), row_h * (sys_[-1] + 1.2)
-    fig_h = top_h + cont_h + mid_h + strip_h + 0.42
+    fig_h = top_h + cont_h + mid_h + strip_h + 0.52
     fig = plt.figure(figsize=(PAGE_WIDTH, fig_h))
     widths = [1.72, 0.90, 0.64, 0.75, 0.72, 0.70, 0.70]
     left, right = 0.04, PAGE_WIDTH - 0.06
@@ -303,7 +321,7 @@ def build_fig2(root: Path, out: Path) -> Path:
         xs.append((x / PAGE_WIDTH, w / PAGE_WIDTH))
         x += w + gaps
     y_cont = (fig_h - top_h - cont_h) / fig_h
-    y_strip = 0.42 / fig_h
+    y_strip = 0.52 / fig_h
     h_cont, h_strip = cont_h / fig_h, strip_h / fig_h
 
     def axes_pair(i):
@@ -527,12 +545,12 @@ def build_fig3(root: Path, out: Path) -> Path:
     bf = d.loc[~d['same_family'] & ~d['structural_dependency']]
     wf = d.loc[d['same_family'] & ~d['structural_dependency']]
     sd = d.loc[d['structural_dependency']]
-    ax.axhline(0, color=RULE, lw=0.5, zorder=0)
-    ax.axvline(0, color=RULE, lw=0.5, zorder=0)
+    ax.axhline(0, color=CONNECT, lw=0.5, zorder=0)
+    ax.axvline(0, color=CONNECT, lw=0.5, zorder=0)
     ax.plot([-1, 1], [-1, 1], ls=(0, (3, 2)), color=INK2, lw=0.6, zorder=1)
     ax.scatter(bf['between_rho'], bf['within_rho'], s=11, facecolors='none', edgecolors=MUTED, lw=0.6,
                label='Between-family', zorder=2)
-    ax.scatter(wf['between_rho'], wf['within_rho'], s=13, color='#1f4e8c', lw=0, label='Within-family', zorder=3)
+    ax.scatter(wf['between_rho'], wf['within_rho'], s=13, color=BETWEEN_COLOR, lw=0, label='Within-family', zorder=3)
     ax.scatter(sd['between_rho'], sd['within_rho'], s=24, marker='D', color=ACCENT, edgecolor='white',
                lw=0.5, label='Mechanically related', zorder=4)
     ax.set_xlim(-1.02, 1.02)
@@ -562,8 +580,6 @@ def build_fig3(root: Path, out: Path) -> Path:
     ax.set_xticks(range(1, int(k) + 1))
     ax.set_xlabel('Component', labelpad=2)
     ax.set_ylabel('Variance explained (%)', labelpad=2)
-    ax.grid(axis='y', color=GRID, lw=0.5)
-    ax.set_axisbelow(True)
     ax.legend(loc='upper right', handlelength=1.6, borderaxespad=0.1, labelspacing=0.3)
     head(ax, 'D', 'Parallel analysis', dx=-28)
 
@@ -678,8 +694,8 @@ def build_fig4(root: Path, out: Path) -> Path:
     ax = ax_in(0.62, fig_h - 1.12, 5.0, 0.88)
     xpos = np.arange(len(rel))
     for xi, a, b in zip(xpos, rel['gwet_ac1'], rel['mean_pairwise_positive_agreement']):
-        ax.plot([xi, xi], [a, b], color=RULE, lw=1.6, solid_capstyle='butt', zorder=2)
-    ax.plot(xpos, rel['gwet_ac1'], 'o', ms=4.6, color='#1f4e8c', mec='white', mew=0.5, label='Gwet’s AC1', zorder=3)
+        ax.plot([xi, xi], [a, b], color=CONNECT, lw=1.6, solid_capstyle='butt', zorder=2)
+    ax.plot(xpos, rel['gwet_ac1'], 'o', ms=4.6, color=BETWEEN_COLOR, mec='white', mew=0.5, label='Gwet’s AC1', zorder=3)
     ax.plot(xpos, rel['mean_pairwise_positive_agreement'], 's', ms=4.4, color=ACCENT, mec='white', mew=0.5,
             label='Positive agreement', zorder=3)
     ax.set_xticks(xpos)
@@ -690,8 +706,6 @@ def build_fig4(root: Path, out: Path) -> Path:
     ax.set_yticks([0, 0.25, 0.5, 0.75, 1])
     ax.set_yticklabels(['0', '', '0.5', '', '1'])
     ax.set_ylabel('Agreement', labelpad=2)
-    ax.grid(axis='y', color=GRID, lw=0.5)
-    ax.set_axisbelow(True)
     ax.spines['bottom'].set_visible(False)
     ax.legend(loc='upper left', bbox_to_anchor=(1.02, 1.0), handletextpad=0.3, labelspacing=0.5,
               borderaxespad=0)
@@ -716,7 +730,8 @@ def build_fig4(root: Path, out: Path) -> Path:
         if r['feature'] not in ypos:
             continue
         sig = np.isfinite(r['q_value']) and r['q_value'] < 0.05
-        col = INK if sig else MUTED
+        base = FAMILY_COLORS.get(r['family'], INK)
+        col = base if sig else tint(base)
         y = ypos[r['feature']]
         ax.plot([r['ol'], r['oh']], [y, y], color=col, lw=0.9, solid_capstyle='butt', zorder=3)
         ax.plot([r['oe']], [y], 'o', ms=4.2, mfc=col if sig else 'white', mec=col, mew=0.9, zorder=4)
