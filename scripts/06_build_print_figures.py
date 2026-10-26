@@ -90,6 +90,7 @@ BETWEEN_COLOR, WITHIN_COLOR = '#3C5488', ACCENT
 FAMILY_ORDER = ['QADD', 'QGAIN', 'QREV', 'QCHAN']
 FAMILY_COLORS = {'QADD': '#3C5488', 'QGAIN': '#00A087', 'QREV': '#E5A019', 'QCHAN': '#B5446E',
                  'QDIST': '#7E6148', 'QTEMP': '#7E6148'}
+MARK_COLOR = None  # one colour for all estimates (monochrome palettes)
 FEAT_FAMILY: dict = {}  # feature -> family, filled by the builders
 ROW_GAP = 0.65  # vertical gap between families, in row units
 
@@ -102,6 +103,10 @@ DIVERGING.set_bad((0, 0, 0, 0))
 # Alternative palettes (choose with --palette); each sets the cohort pair, the four family colours
 # and the diverging heatmap scale. The default above is the NPG palette.
 PALETTES = {
+    # Midnight blue and blue-grey, burgundy only for the second series; family shown by shade and label.
+    'midnight_mono': dict(control='#8A9BB8', als='#7D1D3F', between='#14213D', mark='#14213D',
+                          fam=['#14213D', '#3A5683', '#6F8AB3', '#A3B5D1'],
+                          div=['#0B1428', '#14213D', '#7F93B8', '#F7F7F8', '#C98A9C', '#7D1D3F', '#420A1E']),
     'midnight': dict(control='#1B2A49', als='#B03A55', fam=['#1B2A49', '#1F7A8C', '#C08A1E', '#8E2F63'],
                      div=['#101a30', '#1B2A49', '#6E86B8', '#FAF9F6', '#E08A9B', '#B03A55', '#5E1427']),
     'petrol': dict(control='#0F4C5C', als='#C2551F', fam=['#155E8A', '#3F7F2A', '#D08E12', '#8E1F3C'],
@@ -122,7 +127,8 @@ def apply_palette(name: str) -> None:
     other = tint(pal['control'], 0.35)
     globals().update(
         ACCENT=pal['als'], CONTROL_COLOR=pal['control'], ALS_COLOR=pal['als'],
-        BETWEEN_COLOR=pal['control'], WITHIN_COLOR=pal['als'], DIVERGING=cmap,
+        BETWEEN_COLOR=pal.get('between', pal['control']), WITHIN_COLOR=pal['als'], DIVERGING=cmap,
+        MARK_COLOR=pal.get('mark'),
         MUTED=tint(pal['control'], 0.6), CONNECT=tint(pal['control'], 0.8),
         FAMILY_COLORS={**dict(zip(FAMILY_ORDER, pal['fam'])), 'QDIST': other, 'QTEMP': other})
 
@@ -188,7 +194,7 @@ def forest(ax, frame, positions, est, low, high, star=True, tier_col='inference_
         y = positions[row['feature']]
         q = row.get('q_value', np.nan)
         sig = star and np.isfinite(q) and q < 0.05
-        base = FAMILY_COLORS.get(FEAT_FAMILY.get(row['feature']), INK)
+        base = MARK_COLOR or FAMILY_COLORS.get(FEAT_FAMILY.get(row['feature']), INK)
         color = base
         face = color if (sig or not star) else 'white'
         if np.isfinite(lo) and np.isfinite(hi):
@@ -226,11 +232,11 @@ def bands(fig, ax, rows, x0, x1, half=0.5):
 
 def family_rail(ax, fam, y0, y1, x=0.0, name_x=0.06, name=True):
     """Family name in its colour, centred on the family's rows, with a thin bracket."""
-    ax.plot([x, x], [y0 - 0.32, y1 + 0.32], color=FAMILY_COLORS.get(fam, INK), lw=0.8,
+    ax.plot([x, x], [y0 - 0.32, y1 + 0.32], color=FAMILY_COLORS.get(fam, INK), lw=2.4 if MARK_COLOR else 0.8,
             solid_capstyle='butt', clip_on=False)
     if name:
         ax.text(name_x, (y0 + y1) / 2, fam, ha='left', va='center', fontweight='bold',
-                color=FAMILY_COLORS.get(fam, INK))
+                color=INK if MARK_COLOR else FAMILY_COLORS.get(fam, INK))
 
 
 def tint(color, amount=0.5):
@@ -758,7 +764,7 @@ def build_fig4(root: Path, out: Path) -> Path:
         if r['feature'] not in ypos:
             continue
         sig = np.isfinite(r['q_value']) and r['q_value'] < 0.05
-        base = FAMILY_COLORS.get(r['family'], INK)
+        base = MARK_COLOR or FAMILY_COLORS.get(r['family'], INK)
         col = base
         y = ypos[r['feature']]
         ax.plot([r['ol'], r['oh']], [y, y], color=col, lw=1.3, solid_capstyle='butt', zorder=3)
@@ -829,8 +835,8 @@ def main() -> None:
                         default=Path(os.environ.get('PAPER1_ANALYSIS_ROOT', repo)) / 'outputs')
     parser.add_argument('--out', type=Path, default=repo / 'outputs' / 'print_figures')
     parser.add_argument('--only', choices=['2', '3', '4'], nargs='*')
-    parser.add_argument('--palette', choices=sorted(PALETTES), default='ocean',
-                        help='colour palette (default: ocean, the one chosen for the manuscript)')
+    parser.add_argument('--palette', choices=sorted(PALETTES), default='midnight_mono',
+                        help='colour palette (default: midnight_mono, chosen for the manuscript)')
     args = parser.parse_args()
     builders = {'2': build_fig2, '3': build_fig3, '4': build_fig4}
     apply_palette(args.palette)
