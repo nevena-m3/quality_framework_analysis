@@ -829,11 +829,11 @@ def main() -> None:
                         default=Path(os.environ.get('PAPER1_ANALYSIS_ROOT', repo)) / 'outputs')
     parser.add_argument('--out', type=Path, default=repo / 'outputs' / 'print_figures')
     parser.add_argument('--only', choices=['2', '3', '4'], nargs='*')
-    parser.add_argument('--palette', choices=sorted(PALETTES), help='alternative colour palette')
+    parser.add_argument('--palette', choices=sorted(PALETTES), default='ocean',
+                        help='colour palette (default: ocean, the one chosen for the manuscript)')
     args = parser.parse_args()
     builders = {'2': build_fig2, '3': build_fig3, '4': build_fig4}
-    if args.palette:
-        apply_palette(args.palette)
+    apply_palette(args.palette)
     for k in args.only or ['2', '3', '4']:
         print(builders[k](args.source_root, args.out))
 
