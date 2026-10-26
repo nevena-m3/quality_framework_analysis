@@ -162,6 +162,7 @@ def as_bool(series: pd.Series) -> pd.Series:
 def tidy(label) -> str:
     """House style for measure names: en dash in 'speech–pause', no trailing 'present'."""
     text = str(label).replace(' present', '').strip()
+    text = text.replace('Frozen-audio', 'Repeated-audio')  # manuscript term for QTEMP repeats
     return text.replace('Speech-pause', 'Speech–pause').replace('speech-pause', 'speech–pause')
 
 
@@ -379,7 +380,7 @@ def build_fig2(root: Path, out: Path) -> Path:
     for fam, yy in fam_span.items():
         family_rail(lab, fam, yy[0], yy[-1], name_x=0.04)
     for r in cont.itertuples(index=False):
-        lab.text(0.32, pos[r.feature], tidy(r.short_label), ha='left', va='center',
+        lab.text(0.32, pos[r.feature], tidy(r.short_label).replace('†', '§'), ha='left', va='center',
                  fontweight='bold' if r.inference_tier == 'core' else 'normal')
     fam_strip = {}
     for f, lbl, fam, t in strip_rows:
@@ -462,7 +463,7 @@ def build_fig2(root: Path, out: Path) -> Path:
     ax, sx = axes_pair(4)
     forest(ax, coh_c, pos, 'estimate', 'ci95_low', 'ci95_high')
     style_rows(ax, ylim, null=0)
-    ax.set_title('ALS − control', loc='left', pad=4, color=INK2)
+    ax.set_title('ALS–control', loc='left', pad=4, color=INK2)
     ax.set_xlabel('IQR units', labelpad=2)
     ax.xaxis.set_major_locator(mpl.ticker.MultipleLocator(0.5))
     ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f'{v:g}'.replace('-', '−')))
