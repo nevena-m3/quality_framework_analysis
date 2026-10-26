@@ -102,16 +102,16 @@ DIVERGING.set_bad((0, 0, 0, 0))
 # Alternative palettes (choose with --palette); each sets the cohort pair, the four family colours
 # and the diverging heatmap scale. The default above is the NPG palette.
 PALETTES = {
-    'midnight': dict(control='#1B2A49', als='#B5485D', fam=['#1B2A49', '#4A7C8C', '#C9A66B', '#8E5572'],
-                     div=['#1B2A49', '#5A6F96', '#B9C3D8', '#F7F5F0', '#E2B4BB', '#B5485D', '#6E1F31']),
-    'petrol': dict(control='#0F4C5C', als='#C8693A', fam=['#2F6F8F', '#6A994E', '#D4A24C', '#9A3B4F'],
-                   div=['#0A3540', '#0F4C5C', '#9DBFC7', '#F7F5F0', '#EBC0A6', '#C8693A', '#7A3518']),
-    'oxford': dict(control='#23395B', als='#8C1C3A', fam=['#23395B', '#3E7C76', '#B8860B', '#8C1C3A'],
-                   div=['#162540', '#23395B', '#A9B6CC', '#F8F7F4', '#D9A3B0', '#8C1C3A', '#4F0E20']),
+    'midnight': dict(control='#1B2A49', als='#B03A55', fam=['#1B2A49', '#1F7A8C', '#C08A1E', '#8E2F63'],
+                     div=['#101a30', '#1B2A49', '#6E86B8', '#FAF9F6', '#E08A9B', '#B03A55', '#5E1427']),
+    'petrol': dict(control='#0F4C5C', als='#C2551F', fam=['#155E8A', '#3F7F2A', '#D08E12', '#8E1F3C'],
+                   div=['#07303a', '#0F4C5C', '#5A9AAA', '#FAF9F6', '#E89A72', '#C2551F', '#6E2a0c']),
+    'oxford': dict(control='#1E3560', als='#8C1C3A', fam=['#1E3560', '#1F7568', '#B5800A', '#8C1C3A'],
+                   div=['#101f3d', '#1E3560', '#6F86B5', '#FAF9F6', '#CC7088', '#8C1C3A', '#4a0a1c']),
     'ocean': dict(control='#005F73', als='#AE2012', fam=['#005F73', '#0A9396', '#EE9B00', '#AE2012'],
-                  div=['#003945', '#005F73', '#94C8CF', '#F7F4EC', '#E9A89F', '#AE2012', '#5F0F08']),
-    'slate': dict(control='#2E3A59', als='#7B4B7A', fam=['#2E3A59', '#5E8C7A', '#D9A05B', '#7B4B7A'],
-                  div=['#1C2438', '#2E3A59', '#AEB5C8', '#F7F6F2', '#CDB3CC', '#7B4B7A', '#45284A']),
+                  div=['#003945', '#005F73', '#4FA3B0', '#FAF9F6', '#E07A6C', '#AE2012', '#5F0F08']),
+    'slate': dict(control='#28365E', als='#7A2F78', fam=['#28365E', '#2F7D62', '#CF8A1F', '#7A2F78'],
+                  div=['#161e38', '#28365E', '#7484B4', '#FAF9F6', '#B97DB6', '#7A2F78', '#3f1340']),
 }
 
 
@@ -177,8 +177,8 @@ def or_axis(ax, values):
 
 
 def forest(ax, frame, positions, est, low, high, star=True, tier_col='inference_tier'):
-    """Estimate and 95% CI in the family colour. Filled = core output; full colour + star = q < 0.05;
-    pale tint = not significant."""
+    """Estimate and 95% CI in the family colour. Filled marker + star = q < 0.05; open = not significant
+    (all filled where no test applies, e.g. ICC)."""
     for _, row in frame.iterrows():
         if row['feature'] not in positions:
             continue
@@ -189,15 +189,15 @@ def forest(ax, frame, positions, est, low, high, star=True, tier_col='inference_
         q = row.get('q_value', np.nan)
         sig = star and np.isfinite(q) and q < 0.05
         base = FAMILY_COLORS.get(FEAT_FAMILY.get(row['feature']), INK)
-        color = base if (sig or not star) else tint(base)
-        face = color if row.get(tier_col, '') == 'core' else 'white'
+        color = base
+        face = color if (sig or not star) else 'white'
         if np.isfinite(lo) and np.isfinite(hi):
-            ax.plot([lo, hi], [y, y], color=color, lw=0.9, solid_capstyle='butt', zorder=3)
+            ax.plot([lo, hi], [y, y], color=color, lw=1.3, solid_capstyle='butt', zorder=3)
             if sig:
                 ax.text(hi, y, '*', ha='left', va='center', fontsize=FS + 1, color=INK,
                         transform=ax.transData + mpl.transforms.ScaledTranslation(1.5 / 72, -1.5 / 72,
                                                                                    ax.figure.dpi_scale_trans))
-        ax.plot([e], [y], 'o', ms=3.9, mfc=face, mec=color, mew=0.9, zorder=4)
+        ax.plot([e], [y], 'o', ms=4.6, mfc=face, mec=color, mew=1.1, zorder=4)
 
 
 def style_rows(ax, ylim, xgrid=False, null=None):
@@ -274,8 +274,8 @@ def expand(m, real_rows, real_cols):
     return out
 
 
-def thin_colorbar(fig, img, cax, label, ticks):
-    cb = fig.colorbar(img, cax=cax)
+def thin_colorbar(fig, img, cax, label, ticks, extend='neither'):
+    cb = fig.colorbar(img, cax=cax, extend=extend, extendfrac=0.06)
     cb.outline.set_visible(False)
     cb.set_ticks(ticks)
     cb.ax.tick_params(length=2, width=0.5, color=AXIS)
@@ -389,15 +389,15 @@ def build_fig2(root: Path, out: Path) -> Path:
             s = s.iloc[0]
             yy = pos[r.feature] + off
             ax.plot([s['p05_z'], s['p95_z']], [yy, yy], color=col, lw=0.6, alpha=0.9, solid_capstyle='butt')
-            ax.plot([s['q1_z'], s['q3_z']], [yy, yy], color=col, lw=2.4, solid_capstyle='butt')
-            ax.plot([s['median_z']], [yy], 'o', ms=3.0, mfc='white', mec=col, mew=0.8, zorder=3)
+            ax.plot([s['q1_z'], s['q3_z']], [yy, yy], color=col, lw=3.2, solid_capstyle='butt')
+            ax.plot([s['median_z']], [yy], 'o', ms=3.4, mfc='white', mec=col, mew=1.0, zorder=3)
     style_rows(ax, ylim, null=0)
     ax.set_xlim(-3.2, 3.2)
     ax.set_xticks([-3, 0, 3])
     ax.set_xlabel('Transformed value\n(IQR units)', labelpad=2)
     lab.legend(handles=[
-        mpl.lines.Line2D([0], [0], color=CONTROL_COLOR, lw=2.4, label='Control'),
-        mpl.lines.Line2D([0], [0], color=ALS_COLOR, lw=2.4, label='ALS')],
+        mpl.lines.Line2D([0], [0], color=CONTROL_COLOR, lw=3.2, label='Control'),
+        mpl.lines.Line2D([0], [0], color=ALS_COLOR, lw=3.2, label='ALS')],
         ncol=2, loc='lower left', bbox_to_anchor=(0.0, 1.0), handlelength=1.3,
         columnspacing=1.0, borderaxespad=0.6, handletextpad=0.4)
     for f, *_ in strip_rows:
@@ -410,7 +410,7 @@ def build_fig2(root: Path, out: Path) -> Path:
                 val = (100 * float(rec.iloc[0]['positive_count']) / float(rec.iloc[0]['n_available_recordings'])
                        if not rec.empty and float(rec.iloc[0]['n_available_recordings']) > 0 else np.nan)
             if np.isfinite(val):
-                sx.plot([0, val], [spos[f] + off] * 2, color=col, lw=2.4, solid_capstyle='butt', zorder=3)
+                sx.plot([0, val], [spos[f] + off] * 2, color=col, lw=3.2, solid_capstyle='butt', zorder=3)
                 sx.plot([val], [spos[f] + off], 'o', ms=2.6, color=col, mew=0, zorder=4)
     style_rows(sx, sylim)
     sx.set_xlim(0, 100)
@@ -538,7 +538,7 @@ def build_fig3(root: Path, out: Path) -> Path:
         m = matrix(col)
         shown = np.where(lower, m, np.nan)
         img = ax.pcolormesh(edges, edges, np.ma.masked_invalid(expand(shown, real, real)), cmap=DIVERGING,
-                            vmin=-1, vmax=1, edgecolors='white', linewidth=0.35)
+                            vmin=-0.8, vmax=0.8, edgecolors='white', linewidth=0.35)
         for i in range(n):
             for j in range(i + 1):
                 if not np.isfinite(m[i, j]):
@@ -565,7 +565,7 @@ def build_fig3(root: Path, out: Path) -> Path:
             start += size
         head(ax, L, title, dx=-24)
     cax = ax_in(6.62, 4.45, 0.09, 1.70)
-    thin_colorbar(fig, img, cax, 'Rank correlation, ρ', [-1, -0.5, 0, 0.5, 1])
+    thin_colorbar(fig, img, cax, 'Rank correlation, ρ', [-0.8, -0.4, 0, 0.4, 0.8], extend='both')
 
     # C: between vs within scatter.
     ax = ax_in(0.55, 1.43, 1.75, 1.75)
@@ -759,10 +759,10 @@ def build_fig4(root: Path, out: Path) -> Path:
             continue
         sig = np.isfinite(r['q_value']) and r['q_value'] < 0.05
         base = FAMILY_COLORS.get(r['family'], INK)
-        col = base if sig else tint(base)
+        col = base
         y = ypos[r['feature']]
-        ax.plot([r['ol'], r['oh']], [y, y], color=col, lw=0.9, solid_capstyle='butt', zorder=3)
-        ax.plot([r['oe']], [y], 'o', ms=4.2, mfc=col if sig else 'white', mec=col, mew=0.9, zorder=4)
+        ax.plot([r['ol'], r['oh']], [y, y], color=col, lw=1.3, solid_capstyle='butt', zorder=3)
+        ax.plot([r['oe']], [y], 'o', ms=4.8, mfc=col if sig else 'white', mec=col, mew=1.1, zorder=4)
     or_axis(ax, pd.concat([fp['ol'], fp['oh']]))
     style_rows(ax, ylim, null=1)
     ax.set_xlabel('Odds ratio (expected direction > 1)', labelpad=2)
